@@ -2,8 +2,8 @@ import React, { useCallback } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// 设置PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// 设置PDF.js worker - 使用本地路径而不是CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
 
 interface PDFUploaderProps {
   onFileSelect: (file: File) => void;
