@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
+import PDFWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 // 设置PDF.js worker - 使用Vite的资源处理
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker;
