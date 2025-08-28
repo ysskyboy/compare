@@ -1,5 +1,9 @@
 import React, { useCallback } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// 设置PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PDFUploaderProps {
   onFileSelect: (file: File) => void;
@@ -30,17 +34,27 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({
     onFileSelect(file);
 
     try {
-      // 使用FileReader读取PDF文件
+      // 使用PDF.js读取PDF文件
       const arrayBuffer = await file.arrayBuffer();
       
-      // 动态导入pdf-parse
-      const pdfParse = (await import('pdf-parse')).default;
-      const pdfData = await pdfParse(arrayBuffer);
+      // 使用PDF.js解析PDF
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
       
-      onTextExtracted(pdfData.text);
+      // 逐页提取文本
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      onTextExtracted(fullText.trim());
     } catch (error) {
       console.error('PDF解析失败:', error);
-      alert('PDF文件解析失败，请确保文件格式正确');
+      alert('PDF文件解析失败，请确保文件格式正确且未加密');
     }
   }, [onFileSelect, onTextExtracted]);
 
