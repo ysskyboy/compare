@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, RotateCcw, GitBranch, Plus, Minus, Edit3, Eye } from 'lucide-react';
+import { FileText, RotateCcw, GitBranch, Plus, Minus, Edit3, Eye, Upload } from 'lucide-react';
+import PDFUploader from './components/PDFUploader';
 
 interface WordDiff {
   type: 'add' | 'delete' | 'modify' | 'equal';
@@ -30,6 +31,11 @@ function App() {
 这是新增的最后一行`);
 
   const [viewMode, setViewMode] = useState<'split' | 'inline'>('inline');
+  const [inputMode, setInputMode] = useState<'text' | 'pdf'>('text');
+  const [leftPdfFile, setLeftPdfFile] = useState<File | null>(null);
+  const [rightPdfFile, setRightPdfFile] = useState<File | null>(null);
+  const [isLoadingLeft, setIsLoadingLeft] = useState(false);
+  const [isLoadingRight, setIsLoadingRight] = useState(false);
 
   // 计算字符串相似度
   const calculateSimilarity = (str1: string, str2: string): number => {
@@ -198,8 +204,47 @@ function App() {
   }, [diffResults]);
 
   const reset = () => {
+    if (inputMode === 'text') {
+      setLeftDoc('');
+      setRightDoc('');
+    } else {
+      setLeftDoc('');
+      setRightDoc('');
+      setLeftPdfFile(null);
+      setRightPdfFile(null);
+    }
+  };
+
+  const handleLeftPdfSelect = (file: File) => {
+    setIsLoadingLeft(true);
+    setLeftPdfFile(file);
+  };
+
+  const handleRightPdfSelect = (file: File) => {
+    setIsLoadingRight(true);
+    setRightPdfFile(file);
+  };
+
+  const handleLeftTextExtracted = (text: string) => {
+    setLeftDoc(text);
+    setIsLoadingLeft(false);
+  };
+
+  const handleRightTextExtracted = (text: string) => {
+    setRightDoc(text);
+    setIsLoadingRight(false);
+  };
+
+  const handleClearLeftPdf = () => {
+    setLeftPdfFile(null);
     setLeftDoc('');
+    setIsLoadingLeft(false);
+  };
+
+  const handleClearRightPdf = () => {
+    setRightPdfFile(null);
     setRightDoc('');
+    setIsLoadingRight(false);
   };
 
   // 渲染字词差异
@@ -430,7 +475,7 @@ function App() {
             <GitBranch className="text-blue-600" size={24} />
             <h1 className="text-2xl font-bold text-gray-800">智能文档对比工具</h1>
           </div>
-          <p className="text-gray-600">字词级精确差异检测，支持内联标识和并排对比两种显示模式</p>
+          <p className="text-gray-600">字词级精确差异检测，支持文本输入和PDF上传，提供内联标识和并排对比两种显示模式</p>
         </div>
 
         {/* Statistics */}
@@ -460,34 +505,106 @@ function App() {
           </div>
         </div>
 
-        {/* Input Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="text-blue-600" size={20} />
-              <h3 className="text-lg font-semibold text-gray-800">原始文档</h3>
-            </div>
-            <textarea
-              value={leftDoc}
-              onChange={(e) => setLeftDoc(e.target.value)}
-              className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="在此输入或粘贴原始文档内容..."
-            />
-          </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="text-green-600" size={20} />
-              <h3 className="text-lg font-semibold text-gray-800">目标文档</h3>
-            </div>
-            <textarea
-              value={rightDoc}
-              onChange={(e) => setRightDoc(e.target.value)}
-              className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-              placeholder="在此输入或粘贴目标文档内容..."
-            />
+        {/* Input Mode Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="flex bg-white rounded-lg shadow-md p-1 border border-gray-200">
+            <button
+              onClick={() => setInputMode('text')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                inputMode === 'text'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Edit3 size={16} />
+              文本输入
+            </button>
+            <button
+              onClick={() => setInputMode('pdf')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                inputMode === 'pdf'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+              }`}
+            >
+              <Upload size={16} />
+              PDF上传
+            </button>
           </div>
         </div>
+
+        {/* Input Section */}
+        {inputMode === 'text' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="text-blue-600" size={20} />
+                <h3 className="text-lg font-semibold text-gray-800">原始文档</h3>
+              </div>
+              <textarea
+                value={leftDoc}
+                onChange={(e) => setLeftDoc(e.target.value)}
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="在此输入或粘贴原始文档内容..."
+              />
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="text-green-600" size={20} />
+                <h3 className="text-lg font-semibold text-gray-800">目标文档</h3>
+              </div>
+              <textarea
+                value={rightDoc}
+                onChange={(e) => setRightDoc(e.target.value)}
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                placeholder="在此输入或粘贴目标文档内容..."
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <PDFUploader
+                title="原始PDF文档"
+                onFileSelect={handleLeftPdfSelect}
+                onTextExtracted={handleLeftTextExtracted}
+                onClear={handleClearLeftPdf}
+                currentFile={leftPdfFile}
+                isLoading={isLoadingLeft}
+              />
+              {leftDoc && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">提取的文本内容：</h4>
+                  <div className="max-h-32 overflow-y-auto p-3 bg-gray-50 rounded border text-sm font-mono">
+                    {leftDoc.substring(0, 500)}
+                    {leftDoc.length > 500 && '...'}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <PDFUploader
+                title="目标PDF文档"
+                onFileSelect={handleRightPdfSelect}
+                onTextExtracted={handleRightTextExtracted}
+                onClear={handleClearRightPdf}
+                currentFile={rightPdfFile}
+                isLoading={isLoadingRight}
+              />
+              {rightDoc && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">提取的文本内容：</h4>
+                  <div className="max-h-32 overflow-y-auto p-3 bg-gray-50 rounded border text-sm font-mono">
+                    {rightDoc.substring(0, 500)}
+                    {rightDoc.length > 500 && '...'}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
@@ -521,7 +638,7 @@ function App() {
             className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold shadow-lg"
           >
             <RotateCcw size={20} />
-            清空重置
+            {inputMode === 'text' ? '清空重置' : '清空文件'}
           </button>
         </div>
 
@@ -573,6 +690,7 @@ function App() {
               <p>• <span className="bg-green-200 text-green-800 px-1 rounded font-semibold">绿色高亮</span>：新增的字词</p>
               <p>• <span className="bg-red-200 text-red-800 px-1 rounded line-through">红色删除线</span>：删除的字词</p>
               <p>• 修改行会同时显示删除和新增的字词，实现精确定位</p>
+              <p>• PDF模式：自动提取PDF文本内容进行对比，支持拖拽上传</p>
             </div>
           </div>
         </div>
