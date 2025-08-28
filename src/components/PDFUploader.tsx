@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
 
-// 设置PDF.js worker - 使用本地路径而不是CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
+// 设置PDF.js worker - 使用Vite的资源处理
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorker;
 
 interface PDFUploaderProps {
   onFileSelect: (file: File) => void;
