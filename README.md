@@ -1,6 +1,7 @@
 # 智能文档对比工具
 
 一个功能强大的在线文档对比工具，支持文本输入和PDF文件上传，提供字词级精确差异检测和多种显示模式。
+
 ![Compare](https://github.com/ysskyboy/compare/blob/main/demo.png)
 
 ## 🌟 在线体验
